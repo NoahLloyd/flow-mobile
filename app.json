@@ -1,0 +1,69 @@
+{
+  "expo": {
+    "name": "Flowmatic",
+    "slug": "flowmatic",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "flowmatic",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0a0a0a"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.noahlloyd.flowmatic"
+    },
+    "android": {
+      "package": "com.noahlloyd.flowmatic",
+      "adaptiveIcon": {
+        "backgroundColor": "#0a0a0a",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "QuickCaptureWidget",
+              "label": "Quick Capture",
+              "description": "One-tap task, note, or focus session",
+              "minWidth": "250dp",
+              "minHeight": "60dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "SignalToggleWidget",
+              "label": "Signal Toggles",
+              "description": "Toggle your daily signals",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "TodaySummaryWidget",
+              "label": "Today Summary",
+              "description": "Focus hours, tasks, and signal score",
+              "minWidth": "250dp",
+              "minHeight": "80dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            }
+          ]
+        }
+      ]
+    ]
+  }
+}
