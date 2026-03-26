@@ -6,7 +6,6 @@ import { useAuthStore } from "../store/auth";
 import { getAvailableSignals, SignalConfig, Session } from "../../types";
 import { syncWidgetData } from "../widgetSync";
 import {
-  applyForce100,
   computeDayScore,
   daysAgo,
   getDateRange,
@@ -18,6 +17,7 @@ import {
 } from "../streak";
 
 const JOURNALING_MIN_CHARS = 1000;
+const STREAK_ALGO_VERSION = 2;
 
 function getTodayDate(timezone?: string): string {
   try {
@@ -85,9 +85,11 @@ export function useStreak(): StreakDisplay {
   const activeSignalKeys =
     (prefs.activeSignals as string[]) || Object.keys(allSignals);
 
-  // Need backfill when count is unset OR points haven't been computed yet
+  const storedAlgoVersion = (prefs.signalStreakAlgoVersion as number) ?? 0;
+
+  // Need backfill when count is unset, points haven't been computed, or algo version changed
   const needsBackfill =
-    storedCount === undefined || storedCount === -1 || !storedDate || storedPoints === undefined;
+    storedCount === undefined || storedCount === -1 || !storedDate || storedPoints === undefined || storedAlgoVersion < STREAK_ALGO_VERSION;
   const yesterdayStr = yesterday();
   const todayStr = today();
   const timezone = prefs.timezone as string | undefined;
@@ -250,26 +252,16 @@ export function useStreak(): StreakDisplay {
     };
   }, [todaySignals, journalingValue, focusHoursValue, activeSignalKeys]);
 
-  // Compute raw score then apply force-100% (matching desktop's display logic)
+  // Compute today's score (force-100% is now built into computeDayScore)
   const todayScore = useMemo(() => {
     if (!signalsWithComputed) return 0;
-    const rawScore = computeDayScore(
+    return computeDayScore(
       signalsWithComputed,
       activeSignalKeys,
       allSignals,
       signalGoals,
       false,
       goal,
-      activeSignalKeys.includes("shower") ? hasShoweredIn3Days : undefined,
-    );
-    // Apply force-100% for display (desktop does this in refreshSignals, not in computeDayScore)
-    return applyForce100(
-      signalsWithComputed,
-      activeSignalKeys,
-      allSignals,
-      signalGoals,
-      goal,
-      rawScore,
       activeSignalKeys.includes("shower") ? hasShoweredIn3Days : undefined,
     );
   }, [signalsWithComputed, allSignals, activeSignalKeys, signalGoals, goal, hasShoweredIn3Days]);
@@ -451,6 +443,7 @@ export function useStreak(): StreakDisplay {
             signalStreakCount: confirmedCount,
             signalStreakDate: lastProcessed,
             signalStreakPoints: confirmedPoints,
+            signalStreakAlgoVersion: STREAK_ALGO_VERSION,
             // Remove old danger flag
             signalStreakDanger: false,
             ...(longestChanged ? { signalStreakLongest: newLongest } : {}),

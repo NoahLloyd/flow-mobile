@@ -63,6 +63,7 @@ export function computeDayScore(
 
   let totalActive = 0;
   let totalScore = 0;
+  let allMeetGoal = percentageGoal > 0;
 
   for (const key of signalsToEvaluate) {
     const config = allSignals[key];
@@ -73,6 +74,7 @@ export function computeDayScore(
 
     // No data recorded for this signal = 0 score
     if (value === undefined || value === null) {
+      if (percentageGoal > 0) allMeetGoal = false;
       continue;
     }
 
@@ -106,6 +108,10 @@ export function computeDayScore(
       // No goal = 0 score (can't evaluate)
     }
 
+    if (percentageGoal > 0 && score < percentageGoal) {
+      allMeetGoal = false;
+    }
+
     totalScore += score;
   }
 
@@ -116,6 +122,7 @@ export function computeDayScore(
       // Caller provides 3-day window result
       const showerScore = showerOverride ? 100 : 0;
       totalScore += showerScore;
+      if (percentageGoal > 0 && showerScore < percentageGoal) allMeetGoal = false;
     } else {
       // Fall back to day's shower value
       const showerVal = daySignals["shower"];
@@ -124,72 +131,17 @@ export function computeDayScore(
           ? 100
           : 0;
       totalScore += showerScore;
+      if (percentageGoal > 0 && showerScore < percentageGoal) allMeetGoal = false;
     }
   }
 
   if (totalActive === 0) return 0;
 
+  // Force 100% when every signal individually meets the goal — matches the
+  // live daily score calculation so historical points are consistent.
+  if (allMeetGoal && totalActive > 0) return 100;
+
   return Math.round(totalScore / totalActive);
-}
-
-/**
- * Apply force-100% logic matching the desktop's live display:
- * When every individual signal's score meets the percentage goal,
- * the overall score is forced to 100%.
- * This is NOT applied in computeDayScore (matching desktop's computeDayScore)
- * and should only be used for live display scoring.
- */
-export function applyForce100(
-  daySignals: Record<string, any>,
-  activeSignalKeys: string[],
-  allSignals: Record<string, SignalConfig>,
-  signalGoals: Record<string, number>,
-  percentageGoal: number,
-  rawScore: number,
-  showerOverride?: boolean,
-): number {
-  let allMeetGoal = true;
-  let count = 0;
-
-  for (const key of activeSignalKeys) {
-    const config = allSignals[key];
-    if (!config) continue;
-
-    count++;
-    const value = key === "shower" && showerOverride !== undefined
-      ? (showerOverride ? 1 : 0)
-      : daySignals[key];
-
-    if (value === undefined || value === null) {
-      allMeetGoal = false;
-      continue;
-    }
-
-    let score = 0;
-    if (config.type === "binary") {
-      score = (value === true || value === "true" || value === 1 || value === "1") ? 100 : 0;
-    } else if (config.type === "scale") {
-      score = typeof value === "number" ? (value / 5) * 100 : 0;
-    } else if (config.type === "number" || config.type === "water") {
-      if (config.hasGoal && key in signalGoals) {
-        const goal = signalGoals[key];
-        if (typeof value === "number") {
-          if (key === "minutesToOffice") {
-            score = value <= goal ? 100 : Math.max(0, 100 - ((value - goal) / goal) * 100);
-          } else {
-            score = value >= goal ? 100 : (value / goal) * 100;
-          }
-        }
-      }
-    }
-
-    if (score < percentageGoal) {
-      allMeetGoal = false;
-    }
-  }
-
-  if (allMeetGoal && count > 0) return 100;
-  return rawScore;
 }
 
 /**
