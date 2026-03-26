@@ -4,10 +4,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Check,
   X,
+  Flame,
 } from "lucide-react-native";
-import { colors, spacing, fontSize, borderRadius } from "../../src/lib/theme";
+import { colors, spacing, fontSize, borderRadius, getScaleColor } from "../../src/lib/theme";
 import { useAuthStore } from "../../src/lib/store/auth";
 import { useDailySignals, useRecordSignal } from "../../src/lib/queries/useSignals";
+import { useStreak } from "../../src/lib/queries/useStreak";
 import { getAvailableSignals, SignalConfig } from "../../src/types";
 
 function BinarySignal({
@@ -65,25 +67,29 @@ function ScaleSignal({
     <View style={styles.scaleContainer}>
       <Text style={styles.scaleLabel}>{label}</Text>
       <View style={styles.scaleRow}>
-        {[1, 2, 3, 4, 5].map((n) => (
-          <Pressable
-            key={n}
-            style={[
-              styles.scaleDot,
-              n <= value && styles.scaleDotActive,
-            ]}
-            onPress={() => onSet(n)}
-          >
-            <Text
+        {[1, 2, 3, 4, 5].map((n) => {
+          const sc = getScaleColor(n);
+          const isActive = n === value;
+          return (
+            <Pressable
+              key={n}
               style={[
-                styles.scaleDotText,
-                n <= value && styles.scaleDotTextActive,
+                styles.scaleDot,
+                isActive && { backgroundColor: sc.bg },
               ]}
+              onPress={() => onSet(n)}
             >
-              {n}
-            </Text>
-          </Pressable>
-        ))}
+              <Text
+                style={[
+                  styles.scaleDotText,
+                  isActive && { color: sc.text },
+                ]}
+              >
+                {n}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
@@ -170,6 +176,7 @@ export default function SignalsScreen() {
   const { user } = useAuthStore();
   const { data: signals, isLoading } = useDailySignals();
   const recordSignal = useRecordSignal();
+  const { streak, isDanger, todayScore, goal, points } = useStreak();
 
   const customSignals = (user?.preferences?.customSignals as Record<string, SignalConfig>) || {};
   const allSignals = getAvailableSignals(customSignals);
@@ -198,20 +205,40 @@ export default function SignalsScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
       >
+        {/* Streak + Score Header */}
+        <View style={styles.streakHeader}>
+          <View style={[styles.streakBadge, isDanger && styles.streakBadgeDanger]}>
+            <Flame size={16} color={isDanger ? colors.error : "#f59e0b"} />
+            <Text style={[styles.streakNumber, isDanger && styles.streakNumberDanger]}>
+              {streak}
+            </Text>
+            <Text style={[styles.streakLabel, isDanger && styles.streakLabelDanger]}>
+              {streak === 1 ? "day" : "days"}
+            </Text>
+          </View>
+          <View style={styles.scoreBadge}>
+            <Text style={[styles.scoreText, todayScore >= goal && styles.scoreTextMet]}>
+              {Math.round(todayScore)}%
+            </Text>
+          </View>
+          <View style={styles.scoreBadge}>
+            <Text style={styles.pointsText}>{points}pt</Text>
+          </View>
+        </View>
         {/* Binary Signals Grid */}
         {binarySignals.length > 0 && (
           <View style={styles.binaryGrid}>
             {binarySignals.map((key) => {
               const config = allSignals[key];
               const val = signals?.[key];
-              const boolVal = val === true || val === "true" || val === 1;
+              const rawBool = val === true || val === "true" || val === 1;
               return (
                 <BinarySignal
                   key={key}
                   label={config.label}
-                  value={boolVal}
+                  value={rawBool}
                   isComputed={config.isComputed}
-                  onToggle={() => handleRecord(key, !boolVal)}
+                  onToggle={() => handleRecord(key, !rawBool)}
                 />
               );
             })}
@@ -261,6 +288,64 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.lg,
+  },
+  // Streak header
+  streakHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.lg,
+  },
+  streakBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: colors.bgSecondary,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  streakBadgeDanger: {
+    borderColor: colors.error,
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+  },
+  streakNumber: {
+    fontSize: fontSize.lg,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  streakNumberDanger: {
+    color: colors.error,
+  },
+  streakLabel: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+  },
+  streakLabelDanger: {
+    color: colors.error,
+  },
+  scoreBadge: {
+    backgroundColor: colors.bgSecondary,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  scoreText: {
+    fontSize: fontSize.sm,
+    fontWeight: "600",
+    color: colors.textSecondary,
+  },
+  scoreTextMet: {
+    color: colors.success,
+  },
+  pointsText: {
+    fontSize: fontSize.sm,
+    fontWeight: "600",
+    color: colors.textMuted,
   },
   // Binary signal grid
   binaryGrid: {
@@ -339,20 +424,14 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     borderRadius: borderRadius.sm,
-    backgroundColor: colors.bgTertiary,
+    backgroundColor: colors.scaleInactive,
     justifyContent: "center",
     alignItems: "center",
   },
-  scaleDotActive: {
-    backgroundColor: colors.signalScale,
-  },
   scaleDotText: {
     fontSize: fontSize.md,
-    color: colors.textMuted,
+    color: colors.scaleInactiveText,
     fontWeight: "600",
-  },
-  scaleDotTextActive: {
-    color: "#fff",
   },
   // Number signals
   numberContainer: {
