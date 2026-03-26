@@ -1,7 +1,23 @@
 import { create } from "zustand";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { User } from "../../types";
 import { api } from "../api";
 import { supabase } from "../supabase";
+
+const CACHED_USER_KEY = "cached_user";
+
+async function cacheUser(user: User | null) {
+  if (user) {
+    await AsyncStorage.setItem(CACHED_USER_KEY, JSON.stringify(user));
+  } else {
+    await AsyncStorage.removeItem(CACHED_USER_KEY);
+  }
+}
+
+async function getCachedUser(): Promise<User | null> {
+  const raw = await AsyncStorage.getItem(CACHED_USER_KEY);
+  return raw ? JSON.parse(raw) : null;
+}
 
 interface AuthState {
   user: User | null;
@@ -27,22 +43,33 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       } = await supabase.auth.getSession();
 
       if (session?.user) {
-        const user = await api.getCurrentUser();
-        set({ user, initialized: true, loading: false });
+        // Try to fetch fresh profile, fall back to cached user
+        try {
+          const user = await api.getCurrentUser();
+          await cacheUser(user);
+          set({ user, initialized: true, loading: false });
+        } catch {
+          const cached = await getCachedUser();
+          set({ user: cached, initialized: true, loading: false });
+        }
       } else {
         set({ user: null, initialized: true, loading: false });
       }
     } catch {
-      set({ user: null, initialized: true, loading: false });
+      // Session fetch failed (offline) - use cached user
+      const cached = await getCachedUser();
+      set({ user: cached, initialized: true, loading: false });
     }
 
     // Listen for auth changes
     supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_OUT") {
+        await cacheUser(null);
         set({ user: null });
       } else if (event === "SIGNED_IN" && session?.user) {
         try {
           const user = await api.getCurrentUser();
+          await cacheUser(user);
           set({ user });
         } catch {
           // ignore
@@ -55,7 +82,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ loading: true });
     try {
       const result = await api.login(email, password);
-      set({ user: result.user as User, loading: false });
+      const user = result.user as User;
+      await cacheUser(user);
+      set({ user, loading: false });
     } catch (error) {
       set({ loading: false });
       throw error;
@@ -66,7 +95,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ loading: true });
     try {
       const result = await api.register(name, email, password);
-      set({ user: result.user as User, loading: false });
+      const user = result.user as User;
+      await cacheUser(user);
+      set({ user, loading: false });
     } catch (error) {
       set({ loading: false });
       throw error;
@@ -75,12 +106,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     await api.logout();
+    await cacheUser(null);
     set({ user: null });
   },
 
   refreshUser: async () => {
     try {
       const user = await api.getCurrentUser();
+      await cacheUser(user);
       set({ user });
     } catch {
       // ignore

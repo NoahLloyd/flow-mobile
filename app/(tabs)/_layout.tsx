@@ -18,16 +18,19 @@ export default function TabLayout() {
           backgroundColor: colors.bgSecondary,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: Platform.OS === "android" ? 64 : 84,
-          paddingBottom: Platform.OS === "android" ? 8 : 28,
-          paddingTop: 8,
+          height: Platform.OS === "android" ? 52 : 72,
+          paddingBottom: Platform.OS === "android" ? 4 : 20,
+          paddingTop: 4,
           elevation: 0,
         },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: {
-          fontSize: fontSize.xs,
+          fontSize: 10,
           fontWeight: "500",
+        },
+        tabBarIconStyle: {
+          marginBottom: -2,
         },
       }}
     >
@@ -35,15 +38,15 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
+          tabBarIcon: ({ color }) => <Home size={18} color={color} />,
         }}
       />
       <Tabs.Screen
         name="tasks"
         options={{
           title: "Tasks",
-          tabBarIcon: ({ color, size }) => (
-            <CheckSquare size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <CheckSquare size={18} color={color} />
           ),
         }}
       />
@@ -51,8 +54,8 @@ export default function TabLayout() {
         name="notes"
         options={{
           title: "Notes",
-          tabBarIcon: ({ color, size }) => (
-            <StickyNote size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <StickyNote size={18} color={color} />
           ),
         }}
       />
@@ -60,17 +63,17 @@ export default function TabLayout() {
         name="capture"
         options={{
           title: "Capture",
-          tabBarIcon: ({ color, size }) => <Zap size={size} color={color} />,
+          tabBarIcon: ({ color }) => <Zap size={18} color={color} />,
         }}
       />
       <Tabs.Screen
         name="morning"
         options={{
           title: "Morning",
-          tabBarIcon: ({ color, size }) => <Sun size={size} color={color} />,
+          tabBarIcon: ({ color }) => <Sun size={18} color={color} />,
         }}
       />
-      {/* Hide signals tab - signals are now inline on Home */}
+      {/* Hide signals tab - signals are inline on Home */}
       <Tabs.Screen
         name="signals"
         options={{

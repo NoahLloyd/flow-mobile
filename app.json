@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0a0a0a"
+      "backgroundColor": "#0c1220"
     },
     "ios": {
       "supportsTablet": true,
@@ -19,7 +19,7 @@
     "android": {
       "package": "com.noahlloyd.flowmatic",
       "adaptiveIcon": {
-        "backgroundColor": "#0a0a0a",
+        "backgroundColor": "#0c1220",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -37,33 +37,130 @@
             {
               "name": "QuickCaptureWidget",
               "label": "Quick Capture",
-              "description": "One-tap task, note, or focus session",
-              "minWidth": "250dp",
+              "description": "Add a task or note",
+              "minWidth": "150dp",
+              "minHeight": "40dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "QuickAddTaskWidget",
+              "label": "Add Task",
+              "description": "Quick add a task",
+              "minWidth": "60dp",
+              "minHeight": "40dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 0
+            },
+            {
+              "name": "QuickAddNoteWidget",
+              "label": "Add Note",
+              "description": "Quick add a note",
+              "minWidth": "60dp",
+              "minHeight": "40dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 0
+            },
+            {
+              "name": "DailyTasksWidget",
+              "label": "Daily Tasks",
+              "description": "Your uncompleted daily tasks",
+              "minWidth": "200dp",
+              "minHeight": "100dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "StartFocusWidget",
+              "label": "Start Focus",
+              "description": "Start a focus session",
+              "minWidth": "80dp",
+              "minHeight": "40dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 0
+            },
+            {
+              "name": "SignalStreakWidget",
+              "label": "Streak (Bold)",
+              "description": "Large fire + streak number",
+              "minWidth": "80dp",
+              "minHeight": "100dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "SignalStreakCompactWidget",
+              "label": "Streak (Compact)",
+              "description": "Horizontal fire + streak",
+              "minWidth": "110dp",
+              "minHeight": "40dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "SignalStreakWeekWidget",
+              "label": "Streak (Week)",
+              "description": "Streak + 7-day progress dots",
+              "minWidth": "150dp",
+              "minHeight": "80dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "SignalStreakRingWidget",
+              "label": "Streak (Ring)",
+              "description": "Circular progress ring + streak",
+              "minWidth": "80dp",
+              "minHeight": "100dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "SignalStreakScoreWidget",
+              "label": "Streak (Score)",
+              "description": "Streak + score progress bar",
+              "minWidth": "150dp",
               "minHeight": "60dp",
               "resizeMode": "horizontal|vertical",
               "updatePeriodMillis": 1800000
             },
             {
-              "name": "SignalToggleWidget",
-              "label": "Signal Toggles",
-              "description": "Toggle your daily signals",
-              "minWidth": "250dp",
-              "minHeight": "110dp",
+              "name": "SignalStreakDuoWidget",
+              "label": "Streak (Duo)",
+              "description": "Duolingo-style fire + number",
+              "minWidth": "110dp",
+              "minHeight": "50dp",
               "resizeMode": "horizontal|vertical",
               "updatePeriodMillis": 1800000
             },
             {
-              "name": "TodaySummaryWidget",
-              "label": "Today Summary",
-              "description": "Focus hours, tasks, and signal score",
-              "minWidth": "250dp",
-              "minHeight": "80dp",
+              "name": "SignalStreakMiniWidget",
+              "label": "Streak (Mini)",
+              "description": "Tiny fire + number",
+              "minWidth": "60dp",
+              "minHeight": "40dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "SignalStreakFlameWidget",
+              "label": "Streak (Flame)",
+              "description": "Large flame with number overlay",
+              "minWidth": "80dp",
+              "minHeight": "110dp",
               "resizeMode": "horizontal|vertical",
               "updatePeriodMillis": 1800000
             }
           ]
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "eebe0221-b03b-4586-b932-ba91b7372e92"
+      }
+    },
+    "owner": "noahlloyd"
   }
 }

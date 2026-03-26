@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api";
 import { useAuthStore } from "../store/auth";
-import { syncWidgetData } from "../widgetSync";
 
 function getTodayDate(timezone?: string): string {
   try {
@@ -66,19 +65,6 @@ export function useRecordSignal() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["signals", today] });
-    },
-    onSuccess: (_data, { metric, value }) => {
-      // Sync binary signals to widget
-      if (typeof value === "boolean") {
-        const signals = queryClient.getQueryData<Record<string, any>>(["signals", today]);
-        if (signals) {
-          const binarySignals: Record<string, boolean> = {};
-          for (const [k, v] of Object.entries(signals)) {
-            if (typeof v === "boolean") binarySignals[k] = v;
-          }
-          syncWidgetData({ binarySignals });
-        }
-      }
     },
   });
 }

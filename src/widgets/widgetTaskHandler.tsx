@@ -1,15 +1,28 @@
 import React from "react";
 import type { WidgetTaskHandlerProps } from "react-native-android-widget";
 import { QuickCaptureWidget } from "./QuickCaptureWidget";
-import { SignalToggleWidget } from "./SignalToggleWidget";
-import { TodaySummaryWidget } from "./TodaySummaryWidget";
+import { QuickAddTaskWidget } from "./QuickAddTaskWidget";
+import { QuickAddNoteWidget } from "./QuickAddNoteWidget";
+import { DailyTasksWidget } from "./DailyTasksWidget";
+import { StartFocusWidget } from "./StartFocusWidget";
+import { SignalStreakWidget } from "./SignalStreakWidget";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Linking } from "react-native";
 
 const WIDGET_NAMES = {
   QuickCapture: "QuickCaptureWidget",
-  SignalToggle: "SignalToggleWidget",
-  TodaySummary: "TodaySummaryWidget",
+  QuickAddTask: "QuickAddTaskWidget",
+  QuickAddNote: "QuickAddNoteWidget",
+  DailyTasks: "DailyTasksWidget",
+  StartFocus: "StartFocusWidget",
+  SignalStreak: "SignalStreakWidget",
+  SignalStreakCompact: "SignalStreakCompactWidget",
+  SignalStreakWeek: "SignalStreakWeekWidget",
+  SignalStreakRing: "SignalStreakRingWidget",
+  SignalStreakScore: "SignalStreakScoreWidget",
+  SignalStreakDuo: "SignalStreakDuoWidget",
+  SignalStreakMini: "SignalStreakMiniWidget",
+  SignalStreakFlame: "SignalStreakFlameWidget",
 } as const;
 
 async function getWidgetData() {
@@ -28,19 +41,91 @@ function renderForWidget(
   const name = props.widgetInfo.widgetName;
   if (name === WIDGET_NAMES.QuickCapture) {
     props.renderWidget(<QuickCaptureWidget />);
-  } else if (name === WIDGET_NAMES.SignalToggle) {
+  } else if (name === WIDGET_NAMES.QuickAddTask) {
+    props.renderWidget(<QuickAddTaskWidget />);
+  } else if (name === WIDGET_NAMES.QuickAddNote) {
+    props.renderWidget(<QuickAddNoteWidget />);
+  } else if (name === WIDGET_NAMES.DailyTasks) {
     props.renderWidget(
-      <SignalToggleWidget
-        signals={data.binarySignals || {}}
-        signalLabels={data.signalLabels || {}}
+      <DailyTasksWidget tasks={data.dailyTasks || []} />
+    );
+  } else if (name === WIDGET_NAMES.StartFocus) {
+    props.renderWidget(<StartFocusWidget />);
+  } else if (name === WIDGET_NAMES.SignalStreak) {
+    props.renderWidget(
+      <SignalStreakWidget
+        streak={data.signalStreak || 0}
+        goalMet={data.signalStreakGoalMet || false}
+        isDanger={data.signalStreakDanger || false}
+        variant="bold"
       />
     );
-  } else if (name === WIDGET_NAMES.TodaySummary) {
+  } else if (name === WIDGET_NAMES.SignalStreakCompact) {
     props.renderWidget(
-      <TodaySummaryWidget
-        focusHours={data.focusHours || 0}
-        tasksRemaining={data.tasksRemaining || 0}
-        signalScore={data.signalScore || 0}
+      <SignalStreakWidget
+        streak={data.signalStreak || 0}
+        goalMet={data.signalStreakGoalMet || false}
+        isDanger={data.signalStreakDanger || false}
+        variant="compact"
+      />
+    );
+  } else if (name === WIDGET_NAMES.SignalStreakWeek) {
+    props.renderWidget(
+      <SignalStreakWidget
+        streak={data.signalStreak || 0}
+        goalMet={data.signalStreakGoalMet || false}
+        isDanger={data.signalStreakDanger || false}
+        week={data.signalStreakWeek || []}
+        variant="week"
+      />
+    );
+  } else if (name === WIDGET_NAMES.SignalStreakRing) {
+    props.renderWidget(
+      <SignalStreakWidget
+        streak={data.signalStreak || 0}
+        goalMet={data.signalStreakGoalMet || false}
+        isDanger={data.signalStreakDanger || false}
+        todayScore={data.signalStreakTodayScore || 0}
+        goal={data.signalStreakGoal || 75}
+        variant="ring"
+      />
+    );
+  } else if (name === WIDGET_NAMES.SignalStreakScore) {
+    props.renderWidget(
+      <SignalStreakWidget
+        streak={data.signalStreak || 0}
+        goalMet={data.signalStreakGoalMet || false}
+        isDanger={data.signalStreakDanger || false}
+        todayScore={data.signalStreakTodayScore || 0}
+        goal={data.signalStreakGoal || 75}
+        variant="score"
+      />
+    );
+  } else if (name === WIDGET_NAMES.SignalStreakDuo) {
+    props.renderWidget(
+      <SignalStreakWidget
+        streak={data.signalStreak || 0}
+        goalMet={data.signalStreakGoalMet || false}
+        isDanger={data.signalStreakDanger || false}
+        variant="duo"
+      />
+    );
+  } else if (name === WIDGET_NAMES.SignalStreakMini) {
+    props.renderWidget(
+      <SignalStreakWidget
+        streak={data.signalStreak || 0}
+        goalMet={data.signalStreakGoalMet || false}
+        isDanger={data.signalStreakDanger || false}
+        variant="mini"
+      />
+    );
+  } else if (name === WIDGET_NAMES.SignalStreakFlame) {
+    props.renderWidget(
+      <SignalStreakWidget
+        streak={data.signalStreak || 0}
+        goalMet={data.signalStreakGoalMet || false}
+        isDanger={data.signalStreakDanger || false}
+        variant="flame"
       />
     );
   }
@@ -71,35 +156,35 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
         Linking.openURL("flowmatic:///session/timer");
         break;
       }
-      if (action === "OPEN_HOME") {
-        Linking.openURL("flowmatic:///");
+      if (action === "OPEN_TASKS") {
+        Linking.openURL("flowmatic:///(tabs)/tasks");
         break;
       }
-      if (action?.startsWith("TOGGLE_SIGNAL_")) {
-        const metric = action.replace("TOGGLE_SIGNAL_", "");
-        const currentValue = props.clickActionData?.currentValue === "true";
-        const newValue = !currentValue;
-
-        // Store toggle request for the app to process via API
-        try {
-          await AsyncStorage.setItem(
-            "widget_signal_toggle",
-            JSON.stringify({
-              metric,
-              value: newValue,
-              timestamp: Date.now(),
-            })
-          );
-        } catch {
-          // ignore
+      if (action === "OPEN_SIGNALS") {
+        Linking.openURL("flowmatic:///(tabs)/signals");
+        break;
+      }
+      if (action === "COMPLETE_TASK") {
+        const taskId = props.clickActionData?.taskId;
+        if (taskId) {
+          try {
+            await AsyncStorage.setItem(
+              "widget_complete_task",
+              JSON.stringify({ taskId, timestamp: Date.now() })
+            );
+            // Remove task from widget data and re-render
+            const data = await getWidgetData();
+            if (data.dailyTasks) {
+              data.dailyTasks = data.dailyTasks.filter(
+                (t: any) => t.id !== taskId
+              );
+              await AsyncStorage.setItem("widget_data", JSON.stringify(data));
+            }
+            renderForWidget(props, data);
+          } catch {
+            // ignore
+          }
         }
-
-        // Update cached widget data and re-render immediately
-        const data = await getWidgetData();
-        if (!data.binarySignals) data.binarySignals = {};
-        data.binarySignals[metric] = newValue;
-        await AsyncStorage.setItem("widget_data", JSON.stringify(data));
-        renderForWidget(props, data);
         break;
       }
       break;
