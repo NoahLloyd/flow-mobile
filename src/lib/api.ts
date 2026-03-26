@@ -62,16 +62,13 @@ export const api = {
   // ─── Auth ────────────────────────────────────────────────
 
   login: async (email: string, password: string) => {
-    console.log("[auth] login attempt for:", email);
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
       password,
     });
     if (error) {
-      console.log("[auth] login error:", error.message, error.status);
       throw new Error(error.message);
     }
-    console.log("[auth] login success, user:", data.user.id);
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
@@ -80,7 +77,7 @@ export const api = {
       .single();
 
     if (profileError) {
-      console.log("[auth] profile fetch error:", profileError.message);
+      // Profile may not exist yet for new users
     }
 
     return {
@@ -99,21 +96,14 @@ export const api = {
   },
 
   register: async (name: string, email: string, password: string) => {
-    console.log("[auth] register attempt for:", email);
     const { data, error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
       options: { data: { name } },
     });
     if (error) {
-      console.log("[auth] register error:", error.message, error.status);
       throw new Error(error.message);
     }
-    console.log("[auth] register result:", {
-      hasSession: !!data.session,
-      hasUser: !!data.user,
-      userId: data.user?.id,
-    });
 
     // If email confirmation is required, session will be null
     if (!data.session) {
