@@ -38,7 +38,7 @@ export const DEFAULT_SIGNALS: Record<string, SignalConfig> = {
   shower: { label: "Shower", type: "binary", hasGoal: false },
   meditation: { label: "Meditation", type: "binary", hasGoal: false },
   reading: { label: "Reading", type: "binary", hasGoal: false },
-  journaling: { label: "Journaling", type: "binary", hasGoal: false },
+  journaling: { label: "Journaling", type: "binary", hasGoal: false, isComputed: true },
   vitamins: { label: "Vitamins", type: "binary", hasGoal: false },
   sleep: { label: "Sleep Hours", type: "number", max: 12, hasGoal: true },
   steps: { label: "Steps", type: "number", max: 30000, hasGoal: true },

@@ -65,6 +65,7 @@ export function useRecordSignal() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["signals", today] });
+      queryClient.invalidateQueries({ queryKey: ["daily-score"] });
     },
   });
 }

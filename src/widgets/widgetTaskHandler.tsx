@@ -8,6 +8,7 @@ import { StartFocusWidget } from "./StartFocusWidget";
 import { SignalStreakWidget } from "./SignalStreakWidget";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Linking } from "react-native";
+import { api } from "../lib/api";
 
 const WIDGET_NAMES = {
   QuickCapture: "QuickCaptureWidget",
@@ -31,6 +32,39 @@ async function getWidgetData() {
     return data ? JSON.parse(data) : {};
   } catch {
     return {};
+  }
+}
+
+/** Fetch fresh score/streak from the edge function and merge into widget data. */
+async function refreshWidgetData(): Promise<Record<string, any>> {
+  const cached = await getWidgetData();
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date());
+    const month = parts.find((p) => p.type === "month")?.value || "01";
+    const day = parts.find((p) => p.type === "day")?.value || "01";
+    const year = parts.find((p) => p.type === "year")?.value || "2024";
+    const todayStr = `${year}-${month}-${day}`;
+
+    const result = await api.computeDailyScore(todayStr, tz);
+    const updated = {
+      ...cached,
+      signalStreak: result.streak.count,
+      signalStreakGoalMet: result.score >= (cached.signalStreakGoal || 75),
+      signalStreakDanger: result.streak.danger,
+      signalStreakTodayScore: result.score,
+      signalStreakPoints: result.streak.points,
+    };
+    await AsyncStorage.setItem("widget_data", JSON.stringify(updated));
+    return updated;
+  } catch {
+    // Offline or auth expired — use cached data
+    return cached;
   }
 }
 
@@ -134,9 +168,15 @@ function renderForWidget(
 export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
   switch (props.widgetAction) {
     case "WIDGET_ADDED":
-    case "WIDGET_UPDATE":
     case "WIDGET_RESIZED": {
       const data = await getWidgetData();
+      renderForWidget(props, data);
+      break;
+    }
+
+    case "WIDGET_UPDATE": {
+      // Periodic update — fetch fresh data from the edge function
+      const data = await refreshWidgetData();
       renderForWidget(props, data);
       break;
     }
