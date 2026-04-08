@@ -428,6 +428,34 @@ export const api = {
     return data || [];
   },
 
+  /**
+   * Call the compute-daily-score edge function.
+   * Returns today's score, signal breakdown, and full streak state.
+   */
+  computeDailyScore: async (
+    date: string,
+    timezone: string
+  ): Promise<{
+    score: number;
+    totalSignals: number;
+    completedSignals: number;
+    signals: Record<string, unknown>;
+    streak: {
+      count: number;
+      danger: boolean;
+      points: number;
+      longest: number;
+      milestones: number[];
+    };
+  }> => {
+    const { data, error } = await supabase.functions.invoke(
+      "compute-daily-score",
+      { body: { date, timezone } }
+    );
+    if (error) throw error;
+    return data;
+  },
+
   // ─── User Preferences ────────────────────────────────────
 
   updateUserPreferences: async (

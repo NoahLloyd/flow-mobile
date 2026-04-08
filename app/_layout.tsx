@@ -12,10 +12,55 @@ import {
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AppState, AppStateStatus } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
+import * as BackgroundFetch from "expo-background-fetch";
+import * as TaskManager from "expo-task-manager";
 import { useAuthStore } from "../src/lib/store/auth";
 import { colors } from "../src/lib/theme";
 import { offlineQueue } from "../src/lib/offline";
 import { api } from "../src/lib/api";
+import { syncWidgetData } from "../src/lib/widgetSync";
+
+// ── Background widget refresh ──────────────────────────────────
+const BACKGROUND_WIDGET_TASK = "background-widget-refresh";
+
+function getTodayDateInTz(timezone?: string): string {
+  try {
+    const tz = timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date());
+    const month = parts.find((p) => p.type === "month")?.value || "01";
+    const day = parts.find((p) => p.type === "day")?.value || "01";
+    const year = parts.find((p) => p.type === "year")?.value || "2024";
+    return `${year}-${month}-${day}`;
+  } catch {
+    return new Date().toISOString().split("T")[0];
+  }
+}
+
+TaskManager.defineTask(BACKGROUND_WIDGET_TASK, async () => {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const todayStr = getTodayDateInTz(tz);
+    const result = await api.computeDailyScore(todayStr, tz);
+
+    await syncWidgetData({
+      signalStreak: result.streak.count,
+      signalStreakGoalMet: result.score >= 75,
+      signalStreakDanger: result.streak.danger,
+      signalStreakTodayScore: result.score,
+      signalStreakGoal: 75,
+      signalStreakPoints: result.streak.points,
+    });
+
+    return BackgroundFetch.BackgroundFetchResult.NewData;
+  } catch {
+    return BackgroundFetch.BackgroundFetchResult.Failed;
+  }
+});
 
 // Tell React Query about network state
 onlineManager.setEventListener((setOnline) => {
@@ -53,6 +98,21 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     initialize();
+  }, []);
+
+  // Register background widget refresh
+  useEffect(() => {
+    (async () => {
+      try {
+        await BackgroundFetch.registerTaskAsync(BACKGROUND_WIDGET_TASK, {
+          minimumInterval: 15 * 60, // 15 minutes (iOS minimum)
+          stopOnTerminate: false,
+          startOnBoot: true,
+        });
+      } catch {
+        // Background fetch not available (e.g. simulator)
+      }
+    })();
   }, []);
 
   return <>{children}</>;
